@@ -2,65 +2,28 @@ import java.util.Random;
 import java.util.stream.IntStream;
 
 public class Main {
+    static final int ARR_SIZE = 10000;
     public static void main(String[] args) {
-        int[] first = generateArr(10000);
-        int[] second = generateArr(10000);
-        runSyncMethod(first, second);
-        runSyncMethodWithSleep(first, second);
-        runAsyncMethod(first, second);
-        runAsyncMethodWithSleep(first, second);
-
-        System.out.println("Mili are not precise. Use nano - they more precise");
-    }
-    static int[] CalcCycle(int[] first, int[] second, boolean doSleep){
-        int[] syncResult = new int[10000];
-        for(int i = 0; i < 10000; i++){
-            syncResult[i] = first[i]*second[i];
-            safe1ms(doSleep);
-        }
-        return syncResult;
-    }
-
-    static void runSyncMethod(int[] first, int[] second){
-        long start = System.currentTimeMillis();
-        CalcCycle(first, second, false);
-        long end = System.currentTimeMillis();
-        long duration = end-start;
-        System.out.printf("Duration Sync Method WITHOUT sleep : %d miliseconds\n", duration);
-    }
-
-    static void runSyncMethodWithSleep(int[] first, int[] second){
-        long start = System.currentTimeMillis();
-        CalcCycle(first, second, true);
-        long end = System.currentTimeMillis();
-        long duration = end-start;
-        System.out.printf("Duration Sync Method WITH sleep : %d miliseconds\n", duration);
-    }
-
-    static void runAsyncMethod(int[] first, int[] second){
-        long start = System.currentTimeMillis();
-        CalcParralel(first, second, false);
-        long end = System.currentTimeMillis();
-        long duration = end-start;
-        System.out.printf("Duration Async Method WITHOUT sleep : %d miliseconds\n", duration);
-    }
-
-    static void runAsyncMethodWithSleep(int[] first, int[] second){
-        long start = System.currentTimeMillis();
-        CalcParralel(first, second, true);
-        long end = System.currentTimeMillis();
-        long duration = end-start;
+        int[] first = generateArr(ARR_SIZE);
+        int[] second = generateArr(ARR_SIZE);
+        long duration = 0;
+        duration = RunCalculation(first, second, true, new CalcParallel());
         System.out.printf("Duration Async Method WITH sleep : %d miliseconds\n", duration);
+        duration = RunCalculation(first, second, false, new CalcParallel());
+        System.out.printf("Duration Async Method WITHOUT sleep : %d miliseconds\n", duration);
+        duration = RunCalculation(first, second, true, new CalcSequential());
+        System.out.printf("Duration Sync Method WITH sleep : %d miliseconds\n", duration);
+        duration = RunCalculation(first, second, false, new CalcSequential());
+        System.out.printf("Duration Sync Method WITHOUT sleep : %d miliseconds\n", duration);
+
+        System.out.println("\nMili are not precise. Use nano - they more precise");
     }
 
-    static int[] CalcParralel(int[] first, int[] second,boolean doSleep){
-        int[] asyncResult = new int[10000];
-
-        IntStream.range(0, 10000).parallel().forEach(i -> {
-            asyncResult[i] = first[i] * second[i];
-            safe1ms(doSleep);
-        });
-        return asyncResult;
+    static long RunCalculation(int[] first, int[] second, boolean isDelay, CalcRunner runner){
+        long start = System.currentTimeMillis();
+        runner.Run(first, second, isDelay);
+        long end = System.currentTimeMillis();
+        return end-start;
     }
 
     private static void safe1ms(boolean doSleep) {
@@ -84,4 +47,32 @@ public class Main {
 
         return array;
         }
+    private interface CalcRunner{
+        int[] Run(int[] first, int[] second,boolean doSleep);
+    }
+    private static class CalcSequential implements CalcRunner{
+
+        @Override
+        public int[] Run(int[] first, int[] second, boolean doSleep) {
+            int[] syncResult = new int[ARR_SIZE];
+            for(int i = 0; i < ARR_SIZE; i++){
+                syncResult[i] = first[i]*second[i];
+                safe1ms(doSleep);
+            }
+            return syncResult;
+        }
+    }
+    private static class CalcParallel implements CalcRunner{
+
+        @Override
+        public int[] Run(int[] first, int[] second, boolean doSleep) {
+            int[] asyncResult = new int[ARR_SIZE];
+
+            IntStream.range(0, ARR_SIZE).parallel().forEach(i -> {
+                asyncResult[i] = first[i] * second[i];
+                safe1ms(doSleep);
+            });
+            return asyncResult;
+        }
+    }
 }
