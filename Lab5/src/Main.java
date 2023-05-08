@@ -13,9 +13,9 @@ public class Main {
     public static void main(String[] args) throws InterruptedException, FileNotFoundException {
         printThread = new FileOutputStream(file);
 
-        Thread thread1 = new Thread(Main::thread1Run);
-        Thread thread2 = new Thread(Main::thread2Run);
-        Thread thread3 = new Thread(Main::thread3Run);
+        Thread thread1 = new Thread(() -> threadRun(1, 250));
+        Thread thread2 = new Thread(() -> threadRun(2, 500));
+        Thread thread3 = new Thread(() -> threadRun(3, 1000));
 
         thread1.start();
         thread2.start();
@@ -43,42 +43,19 @@ public class Main {
         }
     }
 
-    private static void thread1Run() {
+    private static void threadRun(int threadNumber, int waitMilli) {
         int thisIterator = 0;
         while (iterator <= 240) {
-            printCurrentIterator(1);
+            printCurrentIterator(threadNumber);
 
-            thisIterator++;
-            iterator = thisIterator;
+            if (threadNumber == 1) {
+                thisIterator++;
+                iterator = thisIterator;
+            }
 
             try {
-                Thread.sleep(250);
-            }
-            catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
-    private static void thread2Run() {
-        while (iterator <= 240) {
-            printCurrentIterator(2);
-            try {
-                Thread.sleep(500);
-            }
-            catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
-    private static void thread3Run() {
-        while (iterator <= 240) {
-            printCurrentIterator(3);
-            try {
-                Thread.sleep(1000);
-            }
-            catch (InterruptedException e) {
+                Thread.sleep(waitMilli);
+            } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
         }
